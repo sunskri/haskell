@@ -4,13 +4,14 @@ import Network
 import System.IO
 
 main = withSocketsDo $ do
-    sock <- listenOn $ PortNumber 20000
+    sock <- listenOn $ PortNumber 20666
     process (sock, [], [])
 
 
 process :: (Socket, [MVar Handle], [Handle]) -> IO ()
 process (s, ms, hs) = do
     (handle, host, port) <- accept s
+    putStrLn $ "New connection " ++ host
     hSetNewlineMode handle universalNewlineMode
     hSetBuffering handle LineBuffering
     nMvar <- getEmptyMVar handle
@@ -36,7 +37,9 @@ newConnection handle handles mvar = do
     case maybeHandle of
         Nothing -> do
             line <- hGetLine handle
+            putStrLn line
             mapM_ (\h -> hPutStrLn h line) handles
+            newConnection handle handles mvar
         Just h  -> do
             newConnection handle (h : handles) mvar    
    

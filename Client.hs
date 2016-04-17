@@ -5,7 +5,7 @@ import System.IO
 
 main :: IO ()
 main = withSocketsDo $ do
-    handle <- connectTo "127.0.0.1" (PortNumber 20000)
+    handle <- connectTo "127.0.0.1" (PortNumber 20666)
     hSetNewlineMode handle universalNewlineMode
     hSetBuffering handle LineBuffering
     forkIO $ receive handle

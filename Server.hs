@@ -5,23 +5,19 @@ import System.IO
 
 main = withSocketsDo $ do
     sock <- listenOn $ PortNumber 20000
-    return ()
+    process (sock, [], [])
 
-{--
-    let mvars = []
-        handles = []
-        loop [sock, mvars, handles]
-        where loop args = forever $ do
-                let
-                    sock = args    !! 0
-                    mvars = args   !! 1
-                    handles = args !! 2
-                    (handle, host, port) <- accept sock
-                    nMvar <- getEmptyMVar handle
-                    handleToMVars handle (mvars)
-                    forkFinally (newConnection handle handles nMvar)
-                    loop [sock, nMvar : mvars, handle : handles]
-                    --}
+
+process :: (Socket, [MVar Handle], [Handle]) -> IO ()
+process (s, ms, hs) = do
+    (handle, host, port) <- accept s
+    hSetNewlineMode handle universalNewlineMode
+    hSetBuffering handle LineBuffering
+    nMvar <- getEmptyMVar handle
+    forkIO $ handleToMVars handle ms
+    forkFinally (newConnection handle hs nMvar) (\_ -> hClose handle)
+    process(s, nMvar:ms, handle:hs)
+    
 
 getEmptyMVar :: Handle -> IO (MVar Handle)
 getEmptyMVar handle = do
@@ -32,6 +28,7 @@ getEmptyMVar handle = do
 handleToMVars :: Handle -> [MVar Handle] -> IO ()
 handleToMVars handle mvars = do
     mapM_ (\m -> putMVar m handle) mvars
+  
             
 newConnection :: Handle -> [Handle] -> MVar Handle -> IO ()
 newConnection handle handles mvar = do
@@ -42,22 +39,7 @@ newConnection handle handles mvar = do
             mapM_ (\h -> hPutStrLn h line) handles
         Just h  -> do
             newConnection handle (h : handles) mvar    
-    
-    
-    
-    {--
-    where loop handle hs mvar = do
-            maybeHandle <- tryTakeMVar mvar
-            case maybeHandle of
-                Nothing -> do
-                    line <- hGetLine handle
-                    mapM_ (\h -> hPutStrLn h line) hs
-                    loop $ handle hs
-                _ -> do 
-                    loop $ handle maybeHandle : hs 
-    
-    --}
-                    
+   
     
     
             

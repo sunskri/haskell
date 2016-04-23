@@ -8,6 +8,9 @@ main = withSocketsDo $ do
     handle <- connectTo "127.0.0.1" (PortNumber 20666)
     hSetNewlineMode handle universalNewlineMode
     hSetBuffering handle LineBuffering
+    putStrLn "enter your name:"
+    username <- getLine
+    hPutStrLn handle username
     forkIO $ receive handle
     transmitt handle
 

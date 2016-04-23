@@ -31,7 +31,7 @@ process (s, ir, mv) = do
     (handle, host, port) <- accept s
     putStrLn $ "New connection " ++ host
     hSetNewlineMode handle universalNewlineMode
-    hSetBuffering handle LineBuffering
+    hSetBuffering handle NoBuffering
     forkFinally (newConnection handle ir (User "") mv) (\_ -> hClose handle)
     process (s, ir, mv)
    
@@ -48,16 +48,16 @@ newConnection handle ir u mv = do
     
 serveConnection :: Handle -> IORef [Connection] -> User -> MVar Int -> IO ()    
 serveConnection handle ir user mv = do
-    cons <- readIORef ir
     line <- hGetLine handle
-    loop line cons
-    where loop line cons = do
+    loop line
+    where loop line = do
             v <- tryTakeMVar mv
             case v of
-                Nothing -> do loop line cons
+                Nothing -> do loop line
                 _       -> do
                     --fcons <- filterConnections (filter (\c -> getUser c /= user) cons) []
-                    mapM_ (\h -> hPutStrLn h (getUsername user ++ ": " ++ line)) (map getHandle (filter (\c -> getUser c /= user) cons))
+                    cons <- readIORef ir
+                    mapM_ (\h -> hPutStrLn h (getUsername user ++ ": " ++ line) >> hFlush h) (map getHandle (filter (\c -> getUser c /= user) cons))
                     putMVar mv 0
                     serveConnection handle ir user mv
     

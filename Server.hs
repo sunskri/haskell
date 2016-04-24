@@ -32,10 +32,10 @@ process (s, ir, mv) = do
     putStrLn $ "New connection " ++ host
     hSetNewlineMode handle universalNewlineMode
     hSetBuffering handle NoBuffering
+    hSetEncoding handle utf8
     forkFinally (newConnection handle ir (User "") mv) (\_ -> hClose handle)
     process (s, ir, mv)
    
-        
 
 newConnection :: Handle -> IORef [Connection] -> User -> MVar Int -> IO ()
 newConnection handle ir u mv = do
